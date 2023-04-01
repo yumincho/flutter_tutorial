@@ -1,5 +1,6 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         title: 'Namer App',
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         ),
         home: MyHomePage(),
       ),
@@ -45,51 +46,166 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+/* TUTORIAL 1-6 */
+// class MyHomePage extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     var appState = context.watch<MyAppState>();
+//     var pair = appState.current;
+
+//     IconData icon; // icon 불러오기 (왜 여기다가 하는 걸까? appstate는 아니고 build할 때 불러오기만 하면 돼서?)
+//     if (appState.favorites.contains(pair)) { // like 버튼 누르고/안 누르고 toggling
+//       icon = Icons.favorite;
+//     } else {
+//       icon = Icons.favorite_border;
+//     }
+
+//     return Scaffold(
+//       body: Center( // center로 감싸서 column을 vertical하게 중앙 정렬 시켜줌
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center, // child를 column 내에서 horizontal하게 중앙 정렬 
+//           children: [
+//             // Text('A random AWESOME idea:'),
+//             // Text(appState.current.asLowerCase),
+//             BigCard(pair: pair),
+//             SizedBox(height: 10), // 단어랑 next 버튼 사이에 간격 띄워주기..? 굳이 padding 안 쓰고 box를 넣어버리는군
+//             Row( // 가로로 버튼 2개 넣기 위해 생성
+//             mainAxisSize: MainAxisSize.min, // child로 가지고 있는 것들 사이즈 그대로
+//               children: [
+//                 ElevatedButton.icon(
+//                   onPressed: () {
+//                   appState.toggleFavorite();
+//                   },
+//                   icon: Icon(icon),
+//                   label: Text('Like')
+//                 ),
+//                 SizedBox(width: 10),
+//                 ElevatedButton(
+//                   onPressed: () {
+//                     print('button pressed!');
+//                     appState.getNext();
+//                   },
+//                   child: Text('Next'),
+//                 ),
+//               ],
+//             ),
+      
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+/* From Tutorial 7 */
+class MyHomePage extends StatefulWidget {
+  // 여기서는 navigationRail의 selectedIndex를 widget 내부의 정보를 변경하고 hold하고 싶어서..? state가 필요하다고 함
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0; // selectedIndex를 일단 0으로 init
+  
+  @override
+  Widget build(BuildContext context) {
+    Widget page; // 새로운 varable (얜 왜 또 여기서 정의??) 밖에서 하면 안 되나?
+    switch (selectedIndex) { // 아무튼 selectedIndex에 따라 switch 됨
+      case 0:
+        page = GeneratorPage();
+        break;
+      case 1:
+        page = Placeholder(); // FavoritesPage가 들어갈 예정
+        break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+    return LayoutBuilder( // app의 window 사이즈 변경하면 그에 따라 builder callback이 called
+      builder: (context, constraints) {
+        return Scaffold(
+          body: Row(
+            children: [
+              SafeArea( // hardware의 notch나 status bar에 가려지지 않도록 도와줌
+                child: NavigationRail(
+                  // extended: false, // 이걸 true로 바꾸면 navigation바가 가로로 길어짐 (왜지??)
+                  // // https://api.flutter.dev/flutter/material/NavigationRail/extended.html
+                  // // https://velog.io/@tmdgks2222/Flutter-State
+                  extended: constraints.maxWidth >= 600, // 화면 가로가 600px 넘으면 navigation text도 보여줌
+                  destinations: [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.favorite),
+                      label: Text('Favorites'),
+                    ),
+                  ],
+                  // selectedIndex: 0, // 지금은 0(home)으로 hard coded (그냥 초기값인가?)
+                  selectedIndex: selectedIndex, // hard coded된 데이터가 아니라 variable 정보 가져오기
+                  onDestinationSelected: (value) {
+                    // print('selected: $value');
+                    setState(() {
+                      selectedIndex = value; // destination 누를 때마다 selectedIndex를 바꿔주기
+                    });
+                  },
+                ),
+              ),
+              Expanded( // 안에 GeneratorPage를 넣었군
+              // Expanded는 SafeArea가 가져가고 남은 부분을 다 가져오는 애
+                child: Container(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  // child: GeneratorPage(),
+                  child: page, // 이제 navigation에서 뭘 누르느냐에 따라 다름
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+}
+
+class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pair = appState.current;
 
-    IconData icon; // icon 불러오기 (왜 여기다가 하는 걸까? appstate는 아니고 build할 때 불러오기만 하면 돼서?)
-    if (appState.favorites.contains(pair)) { // like 버튼 누르고/안 누르고 toggling
+    IconData icon;
+    if (appState.favorites.contains(pair)) {
       icon = Icons.favorite;
     } else {
       icon = Icons.favorite_border;
     }
 
-    return Scaffold(
-      body: Center( // center로 감싸서 column을 vertical하게 중앙 정렬 시켜줌
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // child를 column 내에서 horizontal하게 중앙 정렬 
-          children: [
-            // Text('A random AWESOME idea:'),
-            // Text(appState.current.asLowerCase),
-            BigCard(pair: pair),
-            SizedBox(height: 10), // 단어랑 next 버튼 사이에 간격 띄워주기..? 굳이 padding 안 쓰고 box를 넣어버리는군
-            Row( // 가로로 버튼 2개 넣기 위해 생성
-            mainAxisSize: MainAxisSize.min, // child로 가지고 있는 것들 사이즈 그대로
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          BigCard(pair: pair),
+          SizedBox(height: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
                   appState.toggleFavorite();
-                  },
-                  icon: Icon(icon),
-                  label: Text('Like')
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    print('button pressed!');
-                    appState.getNext();
-                  },
-                  child: Text('Next'),
-                ),
-              ],
-            ),
-      
-          ],
-        ),
+                },
+                icon: Icon(icon),
+                label: Text('Like'),
+              ),
+              SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () {
+                  appState.getNext();
+                },
+                child: Text('Next'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -126,119 +242,3 @@ class BigCard extends StatelessWidget { // assigned name "BigCard" to new class
     );
   }
 }
-
-// import 'package:flutter/material.dart';
-
-// void main() {
-//   runApp(const MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   // This widget is the root of your application.
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Flutter Demo',
-//       theme: ThemeData(
-//         // This is the theme of your application.
-//         //
-//         // Try running your application with "flutter run". You'll see the
-//         // application has a blue toolbar. Then, without quitting the app, try
-//         // changing the primarySwatch below to Colors.green and then invoke
-//         // "hot reload" (press "r" in the console where you ran "flutter run",
-//         // or simply save your changes to "hot reload" in a Flutter IDE).
-//         // Notice that the counter didn't reset back to zero; the application
-//         // is not restarted.
-//         primarySwatch: Colors.blue,
-//       ),
-//       home: const MyHomePage(title: 'Flutter Demo Home Page'),
-//     );
-//   }
-// }
-
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({super.key, required this.title});
-
-//   // This widget is the home page of your application. It is stateful, meaning
-//   // that it has a State object (defined below) that contains fields that affect
-//   // how it looks.
-
-//   // This class is the configuration for the state. It holds the values (in this
-//   // case the title) provided by the parent (in this case the App widget) and
-//   // used by the build method of the State. Fields in a Widget subclass are
-//   // always marked "final".
-
-//   final String title;
-
-//   @override
-//   State<MyHomePage> createState() => _MyHomePageState();
-// }
-
-// class _MyHomePageState extends State<MyHomePage> {
-//   int _counter = 0;
-
-//   void _incrementCounter() {
-//     setState(() {
-//       // This call to setState tells the Flutter framework that something has
-//       // changed in this State, which causes it to rerun the build method below
-//       // so that the display can reflect the updated values. If we changed
-//       // _counter without calling setState(), then the build method would not be
-//       // called again, and so nothing would appear to happen.
-//       _counter++;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // This method is rerun every time setState is called, for instance as done
-//     // by the _incrementCounter method above.
-//     //
-//     // The Flutter framework has been optimized to make rerunning build methods
-//     // fast, so that you can just rebuild anything that needs updating rather
-//     // than having to individually change instances of widgets.
-//     return Scaffold(
-//       appBar: AppBar(
-//         // Here we take the value from the MyHomePage object that was created by
-//         // the App.build method, and use it to set our appbar title.
-//         title: Text(widget.title),
-//       ),
-//       body: Center(
-//         // Center is a layout widget. It takes a single child and positions it
-//         // in the middle of the parent.
-//         child: Column(
-//           // Column is also a layout widget. It takes a list of children and
-//           // arranges them vertically. By default, it sizes itself to fit its
-//           // children horizontally, and tries to be as tall as its parent.
-//           //
-//           // Invoke "debug painting" (press "p" in the console, choose the
-//           // "Toggle Debug Paint" action from the Flutter Inspector in Android
-//           // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-//           // to see the wireframe for each widget.
-//           //
-//           // Column has various properties to control how it sizes itself and
-//           // how it positions its children. Here we use mainAxisAlignment to
-//           // center the children vertically; the main axis here is the vertical
-//           // axis because Columns are vertical (the cross axis would be
-//           // horizontal).
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: <Widget>[
-//             const Text(
-//               'You have pushed the button this many times:',
-//             ),
-//             Text(
-//               '$_counter',
-//               style: Theme.of(context).textTheme.headlineMedium,
-//             ),
-//           ],
-//         ),
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         onPressed: _incrementCounter,
-//         tooltip: 'Increment',
-//         child: const Icon(Icons.add),
-//       ), // This trailing comma makes auto-formatting nicer for build methods.
-//     );
-//   }
-// }
