@@ -1,6 +1,5 @@
-# yumyum_tutorial_app
-
-A new Flutter project.
+# Build yumyum_tutorial_app
+A new Flutter project for SPARCS App Seminar Assignment #1
 
 ## Getting Started
 
