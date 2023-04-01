@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         title: 'Namer App',
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
         ),
         home: MyHomePage(),
       ),
@@ -27,8 +27,20 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
+
   void getNext() {
     current = WordPair.random();
+    notifyListeners();
+  }
+
+  var favorites = <WordPair>[]; // like 누른 word pair 저장하기 위한 empty list
+
+  void toggleFavorite() { // like 버튼 누르고/안 누르고 toggling
+    if (favorites.contains(current)) {
+      favorites.remove(current);
+    } else {
+      favorites.add(current);
+    }
     notifyListeners();
   }
 }
@@ -37,21 +49,79 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var pair = appState.current;
+
+    IconData icon; // icon 불러오기 (왜 여기다가 하는 걸까? appstate는 아니고 build할 때 불러오기만 하면 돼서?)
+    if (appState.favorites.contains(pair)) { // like 버튼 누르고/안 누르고 toggling
+      icon = Icons.favorite;
+    } else {
+      icon = Icons.favorite_border;
+    }
 
     return Scaffold(
-      body: Column(
-        children: [
-          Text('A random AWESOME idea:'),
-          Text(appState.current.asLowerCase),
-          ElevatedButton(
-            onPressed: () {
-              print('button pressed!');
-              appState.getNext();
-            },
-            child: Text('Next'),
-          ),
+      body: Center( // center로 감싸서 column을 vertical하게 중앙 정렬 시켜줌
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // child를 column 내에서 horizontal하게 중앙 정렬 
+          children: [
+            // Text('A random AWESOME idea:'),
+            // Text(appState.current.asLowerCase),
+            BigCard(pair: pair),
+            SizedBox(height: 10), // 단어랑 next 버튼 사이에 간격 띄워주기..? 굳이 padding 안 쓰고 box를 넣어버리는군
+            Row( // 가로로 버튼 2개 넣기 위해 생성
+            mainAxisSize: MainAxisSize.min, // child로 가지고 있는 것들 사이즈 그대로
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                  appState.toggleFavorite();
+                  },
+                  icon: Icon(icon),
+                  label: Text('Like')
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    print('button pressed!');
+                    appState.getNext();
+                  },
+                  child: Text('Next'),
+                ),
+              ],
+            ),
+      
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-        ],
+class BigCard extends StatelessWidget { // assigned name "BigCard" to new class
+  const BigCard({
+    super.key,
+    required this.pair,
+  });
+
+  final WordPair pair;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context); // First, the code requests the app's current theme
+    final style = theme.textTheme.displayMedium!.copyWith( // '!' operator to assure Dart i know what i'm doing (it's not null!)
+      color: theme.colorScheme.onPrimary, // primary에 썼을 때 잘 보이는 색깔
+    );
+
+    return Card(
+      color: theme.colorScheme.primary, // Then, the code defines the card's color to be the same as the theme's colorScheme property.
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        // child: Text(pair.asLowerCase),
+        // child: Text(pair.asLowerCase, style: style),
+        // child: Text("${pair.first} ${pair.second}", style: style),
+        child: Text(
+          pair.asLowerCase,
+          style: style,
+          semanticsLabel: "${pair.first} ${pair.second}", // 이렇게 하면 시스템 상에서는 띄어쓰기를 인식하는데?(e.g. 보이스 reader) UI는 띄어쓰기 X인 상태로 나옴
+        )
       ),
     );
   }
