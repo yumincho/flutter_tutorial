@@ -1,5 +1,5 @@
 # Build yumyum_tutorial_app
-A new Flutter project for SPARCS App Seminar Assignment #1
+A new Flutter project for **KAIST SPARCS** `2023 Spring Newbie Seminar` App Developer Assignment #1
 
 ## Getting Started
 
